@@ -1,3 +1,4 @@
 data/
 data.tar.gz
 california dreamin.wav
+__pycache__/
