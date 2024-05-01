@@ -1,3 +1,5 @@
 spotipy
 yt-dlp
 youtube-search
+tqdm
+python-dotenv
