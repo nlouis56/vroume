@@ -98,6 +98,9 @@ def main():
         plotHistory(history, graphTitle, graphSubtitle, graphFilename)
     else:
         plotHistory(history, graphTitle, graphSubtitle)
+    if not os.path.exists("../models"):
+        os.makedirs("../models")
+    model.save(f"../models/{dataFileName}.h5")
 
 
 if __name__ == '__main__':
