@@ -1,0 +1,14 @@
+spotipy
+yt-dlp
+youtube-search
+tqdm
+python-dotenv
+pandas
+numpy
+matplotlib
+scipy
+scikit-learn
+librosa
+tensorflow
+keras
+keras.models
