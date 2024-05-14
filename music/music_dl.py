@@ -1,6 +1,7 @@
 # Description: Downloads songs from Spotify playlists using yt-dlp and spotipy
 # The script will download the songs from the playlists in the playlists.txt file
 # example usage: python music_dl.py -o data/music -p playlists.txt
+# download only 10% of the songs (testing) : python music_dl.py -o data/music -p playlists.txt -q 10
 
 
 import os
@@ -119,6 +120,9 @@ def delete_duplicates(songList: list) -> list:
     return single_genre_songs
 
 
+def keep_percentage(songList: list, percentage: int) -> list:
+    return songList[:int(len(songList) * percentage / 100)]
+
 
 def get_spotify_link_list(file: str) -> list:
     with open(file, 'r') as f:
@@ -143,6 +147,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Download songs from Spotify playlists')
     parser.add_argument('-o', '--output', help='Output folder', required=True)
     parser.add_argument('-p', '--playlists', help='File with Spotify playlist links', required=True)
+    parser.add_argument('-q', '--quantity', help='Percentage of the songs to download', default=100)
     return parser.parse_args()
 
 
@@ -155,8 +160,9 @@ def main():
     print(f'Found {len(playlistsLinks)} playlists')
     songList = [song for playlist in tqdm(playlistsLinks, total=len(playlistsLinks) ,desc="Getting song list") for song in get_song_list(playlist, sp)]
     songList = delete_duplicates(songList)
-    print(f'Found {len(songList)} songs, shuffling list...')
     random.shuffle(songList)
+    songList = keep_percentage(songList, int(args.quantity))
+    print(f'Kept {len(songList)} songs to download')
     run_parallel(songList, args.output)
 
 

@@ -8,6 +8,7 @@ numpy
 matplotlib
 scipy
 scikit-learn
+pysoundfile
 librosa
 tensorflow
 keras
