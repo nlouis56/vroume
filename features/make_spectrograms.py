@@ -5,6 +5,7 @@ import soundfile as sf
 import librosa
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -19,27 +20,52 @@ def parse_arguments():
 
 
 def create_spectrogram(file, outputFolder, length):
-    y, sr = sf.read(file)
+    y, sr = librosa.load(file)
     if len(y) < length * sr:
         return
     for i in range(len(y) // (length * sr)):
         y_slice = y[i * length * sr: (i + 1) * length * sr]
-        S = librosa.feature.melspectrogram(y_slice, sr=sr)
-        # S_dB = librosa.power_to_db(S, ref=np.max)
+        slc = librosa.feature.melspectrogram(y=y_slice, sr=sr)
+
         plt.figure(figsize=(12, 8))
-        librosa.display.specshow(librosa.power_to_db(S, ref=np.max), y_axis='mel', x_axis='time')
-        plt.colorbar(format='%+2.0f dB')
-        plt.title('Mel spectrogram')
-        plt.tight_layout()
-        plt.savefig(os.path.join(outputFolder, f'{file.split("/")[-1]}_{i}.png'))
+        try:
+            librosa.display.specshow(librosa.power_to_db(slc, ref=np.max), y_axis='mel', x_axis='time')
+        except:
+            continue
+
+        plt.axis('off')  # Turn off the axis
+        plt.gca().set_position([0, 0, 1, 1])  # Remove padding around the plot
+
+        plt.savefig(os.path.join(outputFolder, f'{os.path.splitext(os.path.basename(file))[0]}_{i}.png'), bbox_inches='tight', pad_inches=0)
         plt.close()
 
 
-def create_spectrograms(inputFolder, outputFolder, length):
-    files = [ file for file in os.listdir(inputFolder) if file.endswith('.wav')]
-    os.makedirs(outputFolder, exist_ok=True)
+def run_parallel(files, outputFolder, length):
+    """ with cf.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(create_spectrogram, file, outputFolder, length) for file in files]
+        for future in tqdm(cf.as_completed(futures), total=len(futures), desc=f'processing {outputFolder.split("/")[-1]}'):
+            future.result() """
+    for file in tqdm(files, desc=f'processing {outputFolder.split("/")[-1]}'):
+        create_spectrogram(file, outputFolder, length)
 
 
 def main():
     args = parse_arguments()
-    create_spectrograms(args.input_path, args.output_path, args.length)
+    inputFolder = args.input_path
+    outputBaseFolder = args.output_path
+    length = args.length
+    subfolders = [f.path for f in os.scandir(inputFolder) if f.is_dir()]
+
+    matplotlib.use('Agg')  # Turn off interactive mode for matplotlib
+
+    for subfolder in subfolders:
+        files = [ file.path for file in os.scandir(subfolder) if file.is_file() and file.name.endswith('.wav')]
+        folderName = subfolder.split('/')[-1]
+        outputFolder = os.path.join(outputBaseFolder, folderName.strip('DLDS-'))
+        os.makedirs(outputFolder, exist_ok=True)
+        print (f'Processing {folderName}, output is {outputFolder}')
+        run_parallel(files, outputFolder, length)
+
+
+if __name__ == '__main__':
+    main()
