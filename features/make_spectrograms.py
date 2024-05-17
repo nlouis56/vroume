@@ -40,11 +40,11 @@ def create_spectrogram(file, outputFolder, length):
         plt.close()
 
 
-def run_parallel(files, outputFolder, length):
-    """ with cf.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(create_spectrogram, file, outputFolder, length) for file in files]
-        for future in tqdm(cf.as_completed(futures), total=len(futures), desc=f'processing {outputFolder.split("/")[-1]}'):
-            future.result() """
+def run_folder(input, outputBase, length):
+    files = [ file.path for file in os.scandir(input) if file.is_file() and file.name.endswith('.wav')]
+    folderName = input.split('/')[-1]
+    outputFolder = os.path.join(outputBase, folderName.strip('DLDS-'))
+    os.makedirs(outputFolder, exist_ok=True)
     for file in tqdm(files, desc=f'processing {outputFolder.split("/")[-1]}'):
         create_spectrogram(file, outputFolder, length)
 
@@ -58,13 +58,9 @@ def main():
 
     matplotlib.use('Agg')  # Turn off interactive mode for matplotlib
 
-    for subfolder in subfolders:
-        files = [ file.path for file in os.scandir(subfolder) if file.is_file() and file.name.endswith('.wav')]
-        folderName = subfolder.split('/')[-1]
-        outputFolder = os.path.join(outputBaseFolder, folderName.strip('DLDS-'))
-        os.makedirs(outputFolder, exist_ok=True)
-        print (f'Processing {folderName}, output is {outputFolder}')
-        run_parallel(files, outputFolder, length)
+    with cf.ProcessPoolExecutor() as executor:
+        executor.map(run_folder, subfolders, [outputBaseFolder] * len(subfolders), [length] * len(subfolders))
+    print('Done !')
 
 
 if __name__ == '__main__':

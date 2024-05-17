@@ -52,6 +52,7 @@ def anonymize_music(baseMusicFolder, nameLength, outputPath):
         for file in tqdm.tqdm(files, desc=genre, total=len(files)):
             old_name = file.split('/')[-1]
             new_name = generate_unique_name(nameCharSet, nameLength, correspondenceTable['new_name']) + '.wav'
+            new_name = f"{genre.strip('DLDS-')}_{new_name}"
             newRow = {'old_name': old_name, 'new_name': new_name, 'genre': genre}
             correspondenceTable = pd.concat([correspondenceTable, pd.DataFrame(newRow, index=[0])])
             os.rename(file, os.path.join(baseMusicFolder, genre, new_name))
